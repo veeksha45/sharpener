@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Tracker</title>
+  <style>
+    body {
+      font-family: Arial;
+      margin: 20px;
+    }
+    input, select, button {
+      margin: 5px;
+      padding: 5px;
+    }
+    .expense-item {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Expense Tracker</h2>
+
+  <input type="number" id="amount" placeholder="Choose expense amount" />
+  <input type="text" id="description" placeholder="Choose description" />
+  <select id="category">
+    <option value="food">Food</option>
+    <option value="electricity">Electricity</option>
+    <option value="movie">Movie</option>
+  </select>
+  <button onclick="addExpense()">Add Expense</button>
+
+  <ul id="expenseList"></ul>
+
+  <script>
+    let expenses = JSON.parse(localStorage.getItem("expenses")) || [];
+
+    function saveExpenses() {
+      localStorage.setItem("expenses", JSON.stringify(expenses));
+    }
+
+    function displayExpenses() {
+      const list = document.getElementById("expenseList");
+      list.innerHTML = "";
+      expenses.forEach((expense, index) => {
+        const li = document.createElement("li");
+        li.className = "expense-item";
+        li.innerHTML = `
+          ₹${expense.amount} - ${expense.description} - ${expense.category}
+          <button onclick="deleteExpense(${index})">Delete Expense</button>
+          <button onclick="editExpense(${index})">Edit Expense</button>
+        `;
+        list.appendChild(li);
+      });
+    }
+
+    function addExpense() {
+      const amount = document.getElementById("amount").value;
+      const description = document.getElementById("description").value;
+      const category = document.getElementById("category").value;
+
+      if (!amount || !description) {
+        alert("Please enter amount and description");
+        return;
+      }
+
+      expenses.push({ amount, description, category });
+      saveExpenses();
+      displayExpenses();
+
+      document.getElementById("amount").value = "";
+      document.getElementById("description").value = "";
+    }
+
+    function deleteExpense(index) {
+      expenses.splice(index, 1);
+      saveExpenses();
+      displayExpenses();
+    }
+
+    function editExpense(index) {
+      const expense = expenses[index];
+      document.getElementById("amount").value = expense.amount;
+      document.getElementById("description").value = expense.description;
+      document.getElementById("category").value = expense.category;
+
+      deleteExpense(index);
+    }
+
+    // Initialize on load
+    displayExpenses();
+  </script>
+
+</body>
+</html>
