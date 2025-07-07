@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Bus Booking</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background:lab(85.01% -20.87 12);
+    }
+
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    form, .display-section {
+      padding: 20px;
+      background-color: blueviolet;
+      border-radius: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    #bookingForm input, #bookingForm select {
+      padding: 8px;
+      width: 300px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    #bookingForm button {
+      padding: 10px 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #bookingForm button:hover {
+      background: #0056b3;
+    }
+
+    .container {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px;
+      flex-wrap: wrap;
+    }
+
+    .booking-item {
+      background: white;
+      margin: 10px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .booking-item button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .booking-item button:first-of-type {
+      background: #dc3545;
+      color: white;
+    }
+
+    .booking-item button:last-of-type {
+      background: #28a745;
+      color: white;
+    }
+
+    #filter {
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      margin-left: 5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Form Section -->
+    <form id="bookingForm" onsubmit="handleSubmit(event)">
+      <h2>Book a Bus</h2>
+      <label>Name:<br /><input type="text" id="name" required /></label><br />
+      <label>Email:<br /><input type="email" id="email" required /></label><br />
+      <label>Phone:<br /><input type="tel" id="phone" required /></label><br />
+      <label>Bus Number:<br />
+        <select id="bus">
+          <option value="Bus 1">Bus 1</option>
+          <option value="Bus 2">Bus 2</option>
+          <option value="Bus 3">Bus 3</option>
+        </select>
+      </label><br /><br />
+      <button type="submit">Book</button>
+    </form>
+
+    <!-- Display & Filter Section -->
+    <div class="display-section">
+      <h2>Bookings</h2>
+      <label for="filter">Filter:</label>
+      <select id="filter" onchange="filterBookings()">
+        <option value="All">All</option>
+        <option value="Bus 1">Bus 1</option>
+        <option value="Bus 2">Bus 2</option>
+        <option value="Bus 3">Bus 3</option>
+      </select>
+      <ul id="bookingList"></ul>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const API_URL = 'https://crudcrud.com/api/1b53a3f01be747cebf4bdbe611f74795/bookings';
+    let editingId = null;
+    let allBookings = [];
+
+    window.onload = () => {
+      fetchBookings();
+    };
+
+    function handleSubmit(event) {
+      event.preventDefault();
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const phone = document.getElementById("phone").value.trim();
+      const bus = document.getElementById("bus").value;
+
+      const booking = { name, email, phone, bus };
+
+      if (editingId) {
+        axios.put(`${API_URL}/${editingId}`, booking)
+          .then(() => {
+            editingId = null;
+            fetchBookings();
+            clearForm();
+          })
+          .catch(err => console.error("Update error:", err));
+      } else {
+        axios.post(API_URL, booking)
+          .then(() => {
+            fetchBookings();
+            clearForm();
+          })
+          .catch(err => console.error("Post error:", err));
+      }
+    }
+
+    function fetchBookings() {
+      axios.get(API_URL)
+        .then(response => {
+          allBookings = response.data;
+          displayBookings(allBookings);
+        })
+        .catch(err => console.error("Fetch error:", err));
+    }
+
+    function displayBookings(bookings) {
+      const list = document.getElementById("bookingList");
+      list.innerHTML = "";
+
+      bookings.forEach(booking => {
+        const div = document.createElement("div");
+        div.className = "booking-item";
+        div.innerHTML = `
+          ${booking.name} | ${booking.email} | ${booking.phone} | ${booking.bus}
+          <button onclick="deleteBooking('${booking._id}')">DELETE</button>
+          <button onclick="editBooking('${booking._id}', '${booking.name}', '${booking.email}', '${booking.phone}', '${booking.bus}')">EDIT</button>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function deleteBooking(id) {
+      axios.delete(`${API_URL}/${id}`)
+        .then(() => {
+          fetchBookings();
+        })
+        .catch(err => console.error("Delete error:", err));
+    }
+
+    function editBooking(id, name, email, phone, bus) {
+      document.getElementById("name").value = name;
+      document.getElementById("email").value = email;
+      document.getElementById("phone").value = phone;
+      document.getElementById("bus").value = bus;
+      editingId = id;
+    }
+
+    function clearForm() {
+      document.getElementById("name").value = "";
+      document.getElementById("email").value = "";
+      document.getElementById("phone").value = "";
+      document.getElementById("bus").value = "Bus 1";
+    }
+
+    function filterBookings() {
+      const selectedBus = document.getElementById("filter").value;
+      if (selectedBus === "All") {
+        displayBookings(allBookings);
+      } else {
+        const filtered = allBookings.filter(b => b.bus === selectedBus);
+        displayBookings(filtered);
+      }
+    }
+  </script>
+</body>
+</html>
