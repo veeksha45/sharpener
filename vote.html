@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Class Monitor Vote</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 20px;
+      background: linear-gradient(to right, #e3f2fd, #ffffff);
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    form {
+      margin-bottom: 20px;
+    }
+
+    label {
+      margin-right: 15px;
+    }
+
+    button {
+      margin-left: 10px;
+    }
+
+    .monitor-section {
+      margin-bottom: 25px;
+    }
+
+    .monitor-section h2 {
+      margin-bottom: 5px;
+      margin-top: 10px;
+    }
+
+    .vote-entry {
+      margin-left: 15px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Class Monitor Vote</h1>
+  <p><strong>Total Votes:</strong> <span id="totalVotes">0</span></p>
+
+  <form id="voteForm">
+    <label>Student Name: <input type="text" id="studentName" required /></label>
+    <label>Choose Monitor:
+      <select id="monitorSelect">
+        <option value="Suresh">Suresh</option>
+        <option value="Deepank">Deepank</option>
+        <option value="Abhik">Abhik</option>
+      </select>
+    </label>
+    <button type="submit">Vote</button>
+  </form>
+
+  <div id="votesContainer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script>
+    const API_URL = 'https://crudcrud.com/api/1b53a3f01be747cebf4bdbe611f74795/votes'; // Replace this
+    const form = document.getElementById('voteForm');
+    const studentName = document.getElementById('studentName');
+    const monitorSelect = document.getElementById('monitorSelect');
+    const votesContainer = document.getElementById('votesContainer');
+    const totalVotesEl = document.getElementById('totalVotes');
+
+    let votes = [];
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const vote = {
+        name: studentName.value.trim(),
+        monitor: monitorSelect.value,
+      };
+
+      if (!vote.name) {
+        alert("Please enter a student name.");
+        return;
+      }
+
+      axios.post(API_URL, vote)
+        .then(res => {
+          votes.push(res.data);
+          studentName.value = '';
+          renderVotes();
+        })
+        .catch(err => console.error(err));
+    });
+
+    function fetchVotes() {
+      axios.get(API_URL)
+        .then(res => {
+          votes = res.data;
+          renderVotes();
+        })
+        .catch(err => console.error("GET error:", err));
+    }
+
+    function deleteVote(id) {
+      axios.delete(`${API_URL}/${id}`)
+        .then(() => {
+          votes = votes.filter(v => v._id !== id);
+          renderVotes();
+        })
+        .catch(err => console.error("DELETE error:", err));
+    }
+
+    function renderVotes() {
+      const grouped = votes.reduce((acc, vote) => {
+        if (!acc[vote.monitor]) acc[vote.monitor] = [];
+        acc[vote.monitor].push(vote);
+        return acc;
+      }, {});
+
+      votesContainer.innerHTML = '';
+
+      for (let monitor in grouped) {
+        const section = document.createElement('div');
+        section.className = 'monitor-section';
+        section.innerHTML = `<h2>${monitor}</h2><p>Total ${grouped[monitor].length}</p>`;
+
+        grouped[monitor].forEach(vote => {
+          const p = document.createElement('p');
+          p.className = 'vote-entry';
+          p.textContent = vote.name + ' ';
+
+          const btn = document.createElement('button');
+          btn.textContent = 'Delete';
+          btn.onclick = () => deleteVote(vote._id);
+
+          p.appendChild(btn);
+          section.appendChild(p);
+        });
+
+        votesContainer.appendChild(section);
+      }
+
+      totalVotesEl.textContent = votes.length;
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchVotes);
+  </script>
+</body>
+</html>
