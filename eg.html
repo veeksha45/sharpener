@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Tracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #3e3e55);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .tracker-container {
+      width: 100%;
+      max-width: 1000px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .form-control {
+      border-radius: 10px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #fff;
+    }
+
+    .form-control::placeholder {
+      color: #ccc;
+    }
+
+    .btn-primary {
+      background-color: #4e8cff;
+      border: none;
+      border-radius: 10px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #256eff;
+    }
+
+    .table {
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .table thead {
+      background-color: #2d2d3c;
+    }
+
+    .table td, .table th {
+      vertical-align: middle;
+    }
+
+    .btn-warning, .btn-danger {
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .btn-warning:hover {
+      background-color: #ffc107d9;
+    }
+
+    .btn-danger:hover {
+      background-color: #dc3545d9;
+    }
+
+    @media (max-width: 768px) {
+      .tracker-container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="tracker-container">
+    <h2>Expense Tracker</h2>
+
+    <form id="expenseForm" class="mb-4">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <input type="text" id="expenseName" class="form-control" placeholder="Expense Name" required>
+        </div>
+        <div class="col-md-3">
+          <input type="number" id="expenseAmount" class="form-control" placeholder="Amount" required>
+        </div>
+        <div class="col-md-3">
+          <input type="text" id="expenseCategory" class="form-control" placeholder="Category" required>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary w-100">Add</button>
+        </div>
+      </div>
+    </form>
+
+    <div class="table-responsive">
+      <table class="table table-bordered text-center align-middle">
+        <thead>
+          <tr>
+            <th>Sl.No</th>
+            <th>Expense Name</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="expenseList"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let expenses = [];
+    let editIndex = null;
+
+    const expenseForm = document.getElementById('expenseForm');
+    const expenseList = document.getElementById('expenseList');
+
+    window.onload = function () {
+      const storedExpenses = localStorage.getItem('expenses');
+      if (storedExpenses) {
+        expenses = JSON.parse(storedExpenses);
+        renderExpenses();
+      }
+    };
+
+    expenseForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById('expenseName').value;
+      const amount = document.getElementById('expenseAmount').value;
+      const category = document.getElementById('expenseCategory').value;
+
+      if (editIndex === null) {
+        expenses.push({ name, amount, category });
+      } else {
+        expenses[editIndex] = { name, amount, category };
+        editIndex = null;
+      }
+
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      this.reset();
+      renderExpenses();
+    });
+
+    function renderExpenses() {
+      expenseList.innerHTML = '';
+      expenses.forEach((exp, index) => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${exp.name}</td>
+          <td>₹${exp.amount}</td>
+          <td>${exp.category}</td>
+          <td>
+            <button class="btn btn-warning btn-sm me-2" onclick="editExpense(${index})">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteExpense(${index})">Delete</button>
+          </td>
+        `;
+
+        expenseList.appendChild(row);
+      });
+    }
+
+    function editExpense(index) {
+      const exp = expenses[index];
+      document.getElementById('expenseName').value = exp.name;
+      document.getElementById('expenseAmount').value = exp.amount;
+      document.getElementById('expenseCategory').value = exp.category;
+      editIndex = index;
+    }
+
+    function deleteExpense(index) {
+      expenses.splice(index, 1);
+      localStorage.setItem('expenses', JSON.stringify(expenses));
+      renderExpenses();
+    }
+  </script>
+</body>
+</html>
